@@ -129,7 +129,7 @@ export class NormalizationEntityCache {
                   return {
                     ...acc,
                     [key]: removeEntityFromObject(curr, currentKeySchema),
-                  }
+                  };
                 }
 
                 return {
