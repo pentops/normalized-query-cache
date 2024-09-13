@@ -1,5 +1,4 @@
-import { MutationCache, type MutationCacheNotifyEvent } from "@tanstack/react-query";
-import { match, P } from 'ts-pattern';
+import { MutationCache, type MutationCacheNotifyEvent } from '@tanstack/react-query';
 import { NormalizationEntityCache } from './normalization-entity-cache';
 
 export class MutationNormalizationCache extends MutationCache {
@@ -14,10 +13,15 @@ export class MutationNormalizationCache extends MutationCache {
   notify(event: MutationCacheNotifyEvent): void {
     super.notify(event);
 
-    match(event)
-      .with({ type: 'updated' }, e => {
-        this.entityCache.processEventData(e.mutation, match(e.action).with({ data: P.not(P.nullish) }, a => a.data).otherwise(() => undefined));
-      })
-      .otherwise(() => {});
+    switch (event.type) {
+      case 'updated':
+        this.entityCache.processEventData(event.mutation, 'data' in event.action ? event.action.data : undefined);
+        break;
+    }
+  }
+
+  clear(): void {
+    super.clear();
+    this.entityCache.reset();
   }
 }

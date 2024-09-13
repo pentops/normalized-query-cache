@@ -405,5 +405,29 @@ describe('NormalizedCache', () => {
         [tennisPlayerEntity.key]: expectedPlayersWithRemovedNumberOne,
       });
     });
+
+    it('should reset the entity cache when clear is called', async () => {
+      const cache = getNormalizedQueryCache();
+      const player = mockData[0];
+      const updatedPlayer = { ...player, rank: mockData.length + 1 };
+
+      await client.fetchQuery<GetPlayerResponse | undefined>(buildQueryOptions(player.id));
+
+      const { sport, ...restOfPlayer } = player;
+      expect(cache.entityCache.entities[tennisPlayerEntity.key][player.id]).toStrictEqual({
+        ...restOfPlayer,
+        sport: sport.id,
+      });
+
+      const mutation = client.getMutationCache().build(client, buildMutationOptions());
+      await mutation.execute(updatedPlayer);
+
+      client.clear();
+
+      expect(cache.entityCache.entities).toStrictEqual({});
+      expect(cache.entityCache.normalizedResponses).toStrictEqual({});
+      expect(cache.entityCache.entityDependencies).toStrictEqual({});
+      expect(cache.getAll()).toHaveLength(0);
+    });
   });
 });

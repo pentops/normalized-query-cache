@@ -27,6 +27,14 @@ export class NormalizationEntityCache {
   entityDependencies: Record<string, Record<string, Set<Query>>> = {};
 
   constructor() {
+    this.initialize();
+  }
+
+  private initialize() {
+    this.normalizedResponses = proxy({});
+    this.entities = proxy({});
+    this.entityDependencies = {};
+
     subscribe(this.entities, (state) => {
       const [op, path] = state[0];
 
@@ -50,6 +58,10 @@ export class NormalizationEntityCache {
         }
       }
     });
+  }
+
+  public reset() {
+    this.initialize();
   }
 
   removeQuery(query: Query) {

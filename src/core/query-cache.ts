@@ -1,5 +1,4 @@
 import { QueryCache, type QueryCacheNotifyEvent } from '@tanstack/react-query';
-import { P, match } from 'ts-pattern';
 import { type Schema } from 'normalizr';
 import { NormalizationEntityCache } from './normalization-entity-cache';
 import type { NormalizedEntity } from '../types';
@@ -22,24 +21,27 @@ export class QueryNormalizationCache extends QueryCache {
   notify(event: QueryCacheNotifyEvent): void {
     super.notify(event);
 
-    match(event)
-      .with({ type: 'added' }, e => {
-        if (e.query.state.data) {
-          this.entityCache.processEventData(e.query, e.query.options.initialData);
-        } else if (e.query.options.meta?.initialNormalizedData) {
-          this.entityCache.processEventData(e.query, e.query.options.meta.initialNormalizedData);
+    switch (event.type) {
+      case 'added': {
+        if ('data' in event.query.state) {
+          this.entityCache.processEventData(event.query, event.query.options.initialData);
         }
-      })
-      .with({ type: 'updated', action: { data: P.not(P.nullish)} }, e => {
-        this.entityCache.processEventData(e.query, e.action.data);
-      })
-      .with({ type: 'removed' }, e => {
-        this.entityCache.removeQuery(e.query);
-      })
-      .otherwise(() => {})
+
+        break;
+      }
+      case 'updated': {
+        this.entityCache.processEventData(event.query, 'data' in event.action ? event.action.data : undefined);
+        break;
+      }
+      case 'removed': {
+        this.entityCache.removeQuery(event.query);
+        break;
+      }
+    }
   }
 
-  reset(): void {
-
+  clear(): void {
+    super.clear();
+    this.entityCache.reset();
   }
 }
