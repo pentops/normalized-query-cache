@@ -200,9 +200,17 @@ export class NormalizationEntityCache {
     preloadData: NormalizedEntity<Data, DataKey>,
     isInfiniteQuery?: boolean,
   ): Data | undefined {
-    return preloadData
-      ? (denormalize(preloadData, isInfiniteQuery ? new normalizrSchema.Object({ pages: [schema] }) : schema, this.entities) as Data)
-      : preloadData;
+    if (!preloadData) {
+      return undefined;
+    }
+
+    const preloaded = (denormalize(preloadData, isInfiniteQuery ? new normalizrSchema.Object({ pages: [schema] }) : schema, this.entities) as Data);
+
+    if (deepEqual(preloaded, preloadData)) {
+      return undefined;
+    }
+
+    return preloaded;
   }
 
   processEventData<Data>(query: Query | Mutation, data: Data) {
