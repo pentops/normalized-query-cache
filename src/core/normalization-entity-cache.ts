@@ -206,7 +206,7 @@ export class NormalizationEntityCache {
 
     const preloaded = (denormalize(preloadData, isInfiniteQuery ? new normalizrSchema.Object({ pages: [schema] }) : schema, this.entities) as Data);
 
-    if (deepEqual(preloaded, preloadData) || Object.values(preloaded || {}).every((value) => value === undefined)) {
+    if (!preloaded || deepEqual(preloaded, preloadData) || Object.values(preloaded).every((value) => value === undefined)) {
       return undefined;
     }
 
