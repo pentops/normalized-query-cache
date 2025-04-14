@@ -2,7 +2,11 @@ import { Mutation, Query } from '@tanstack/react-query';
 import { proxy, subscribe } from 'valtio';
 import { denormalize, normalize, schema as normalizrSchema, Schema } from 'normalizr';
 import deepEqual from 'fast-deep-equal';
-import type { IDType, NormalizedEntity } from '../types';
+import type { IDType, NormalizedEntity, PSMEvent, PSMEventUpdater } from '../types';
+
+export interface NormalizationEntityCacheOptions {
+  psmEventUpdater?: PSMEventUpdater;
+}
 
 export class NormalizationEntityCache {
   static getIsInfiniteQuery(query: Query | Mutation) {
@@ -20,14 +24,20 @@ export class NormalizationEntityCache {
     return isInfiniteQuery ? new normalizrSchema.Object({ pages: [base] }) : base;
   }
 
+  psmEventUpdater?: PSMEventUpdater;
+
   normalizedResponses: Record<string, NormalizedEntity> = proxy({});
 
   entities: Record<string, Record<string, NormalizedEntity>> = proxy({});
 
   entityDependencies: Record<string, Record<string, Set<Query>>> = {};
 
-  constructor() {
+  constructor(options?: NormalizationEntityCacheOptions) {
     this.initialize();
+
+    if (options) {
+      this.psmEventUpdater = options.psmEventUpdater;
+    }
   }
 
   private initialize() {
@@ -204,7 +214,7 @@ export class NormalizationEntityCache {
       return undefined;
     }
 
-    const preloaded = (denormalize(preloadData, isInfiniteQuery ? new normalizrSchema.Object({ pages: [schema] }) : schema, this.entities) as Data);
+    const preloaded = denormalize(preloadData, isInfiniteQuery ? new normalizrSchema.Object({ pages: [schema] }) : schema, this.entities) as Data;
 
     if (!preloaded || deepEqual(preloaded, preloadData) || Object.values(preloaded).every((value) => value === undefined)) {
       return undefined;
@@ -226,23 +236,29 @@ export class NormalizationEntityCache {
       }
 
       this.addEntities(normalizedData.entities as Record<string, Record<string, NormalizedEntity>>, query instanceof Query ? query : undefined);
+    }
+  }
 
-      for (const [entityName, entities] of Object.entries(normalizedData.entities)) {
-        if (!this.entities[entityName]) {
-          this.entities[entityName] = proxy({});
-        }
+  processPSMEvent<TState = any, TKeys = any, TEvent = any>(event: PSMEvent<TState, TKeys, TEvent>) {
+    if (!this.psmEventUpdater) {
+      return;
+    }
 
-        // Add the entities for the response to the entity & entity dependency caches
-        for (const [id, entity] of Object.entries(entities || {})) {
-          if (query instanceof Query) {
-            this.addEntityDependency(query, entityName, id);
-          }
+    const update = this.psmEventUpdater(event);
 
-          if (!this.entities[entityName][id] || !deepEqual(this.entities[entityName][id], entity)) {
-            this.entities[entityName][id] = entity;
-          }
-        }
+    if (!update) {
+      return;
+    }
+
+    const entityId = update.entity.getId(update.data, {}, '');
+
+    if (update.deleteEntity) {
+      if (entityId) {
+        this.deleteEntity(update.entity, entityId);
       }
+    } else if (this.entities[update.entity.key]?.[entityId] || update.forceAdd) {
+      const normalizedData = normalize(update.data, update.entity);
+      this.addEntities(normalizedData.entities as Record<string, Record<string, NormalizedEntity>>, undefined);
     }
   }
 }

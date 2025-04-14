@@ -1,3 +1,5 @@
+import { schema as normalizrSchema } from 'normalizr';
+
 export type IDType = string | number;
 
 export type NormalizedEntity<T = unknown, K extends keyof T | undefined = undefined, Id = IDType> = {
@@ -7,3 +9,29 @@ export type NormalizedEntity<T = unknown, K extends keyof T | undefined = undefi
       : Id | undefined
     : T[P];
 };
+
+export interface PSMEvent<TState = any, TKeys = any, TEvent = any> {
+  id: string;
+  // format: uint64
+  sequence: string;
+  // format: date-time
+  timestamp: string;
+  entityName: string;
+  eventType: string;
+  eventData: {
+    '!type': string;
+    'value': TEvent;
+  };
+  entityKeys: {
+    '!type': string;
+    'value': TKeys;
+  };
+  entityState: {
+    '!type': string;
+    'value': TState;
+  };
+}
+
+export type PSMEventUpdater = <TState = any, TKeys = any, TEvent = any>(
+  event: PSMEvent<TState, TKeys, TEvent>,
+) => { entity: normalizrSchema.Entity; data: TState; deleteEntity?: boolean; forceAdd?: boolean } | undefined;
