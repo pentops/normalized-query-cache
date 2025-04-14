@@ -239,7 +239,7 @@ export class NormalizationEntityCache {
     }
   }
 
-  processPSMEvent<TState = any, TKeys = any, TEvent = any>(event: PSMEvent<TState, TKeys, TEvent>) {
+  public processPSMEvent<TState = any, TKeys = any, TEvent = any>(event: PSMEvent<TState, TKeys, TEvent>) {
     if (!this.psmEventUpdater) {
       return;
     }
