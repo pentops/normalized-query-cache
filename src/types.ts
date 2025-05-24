@@ -10,7 +10,7 @@ export type NormalizedEntity<T = unknown, K extends keyof T | undefined = undefi
     : T[P];
 };
 
-export interface PSMEvent<TState = any, TKeys = any, TEvent = any> {
+export interface PSMEvent<TStateData = any, TKeys = any, TEvent = any, TStatus extends string = string> {
   id: string;
   // format: uint64
   sequence: string;
@@ -28,8 +28,9 @@ export interface PSMEvent<TState = any, TKeys = any, TEvent = any> {
   };
   entityState: {
     '!type': string;
-    'value': TState;
+    'value': TStateData;
   };
+  entityStatus: TStatus;
 }
 
 export type PSMEventUpdater = <TState = any, TKeys = any, TEvent = any>(

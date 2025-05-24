@@ -93,7 +93,7 @@ export class NormalizationEntityCache {
         this.entities[entityName] = proxy({});
       }
 
-      // Add the entities for the response to the entity & entity dependency caches
+      // Add the entities for the response to the entity and entity dependency caches
       for (const [id, entity] of Object.entries(entities || {})) {
         if (query) {
           this.addEntityDependency(query, entityName, id);
@@ -185,7 +185,7 @@ export class NormalizationEntityCache {
       delete this.entityDependencies[entity.key][entityIdAsIdType];
     }
 
-    // Finally, delete the entity from the entities cache. Note that if there are dependent queries for the entity,
+    // Finally, delete the entity from the "entities" cache. Note that if there are dependent queries for the entity,
     // we aren't deleting the entityDependencies yet, as those will be deleted when the last dependent query is removed.
     // See the subscription callback in addQueryNotifier.
     delete this.entities[entity.key][entityIdAsIdType];
